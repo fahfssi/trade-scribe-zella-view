@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { TradeEntry } from '@/types/trade';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { CircleDollarSign } from 'lucide-react';
 
 interface TradeCalendarProps {
   trades: TradeEntry[];
@@ -81,13 +83,20 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
         )} />
         <div className="relative flex flex-col h-full justify-between p-1">
           <div>{day.getDate()}</div>
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-1">
             <Badge variant="outline" className={cn(
               "text-[9px] px-1 py-0 whitespace-nowrap",
               isProfitable ? "border-profit text-profit" : "border-loss text-loss"
             )}>
               {trades.length} {trades.length === 1 ? 'trade' : 'trades'}
             </Badge>
+            <div className={cn(
+              "text-[10px] font-medium flex items-center gap-0.5",
+              isProfitable ? "text-profit" : "text-loss"
+            )}>
+              <CircleDollarSign className="h-2.5 w-2.5" />
+              {isProfitable ? '+' : ''}{pnl.toFixed(2)}
+            </div>
           </div>
         </div>
       </div>
@@ -96,36 +105,29 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Trade Calendar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            className="rounded-md border pointer-events-auto"
-            components={{
-              Day: ({ date, ...props }) => {
-                // Ensure date is a valid Date object
-                if (!date) return null;
-                
-                return (
-                  <button
-                    {...props}
-                    className={
-                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                    }
-                  >
-                    {renderDay(date) || date.getDate()}
-                  </button>
-                );
-              },
-            }}
-          />
-        </CardContent>
-      </Card>
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        onSelect={handleDateSelect}
+        className="rounded-md border pointer-events-auto mx-auto w-full"
+        components={{
+          Day: ({ date, ...props }) => {
+            // Ensure date is a valid Date object
+            if (!date) return null;
+            
+            return (
+              <button
+                {...props}
+                className={
+                  "h-16 w-full p-0 font-normal aria-selected:opacity-100"
+                }
+              >
+                {renderDay(date) || date.getDate()}
+              </button>
+            );
+          },
+        }}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>

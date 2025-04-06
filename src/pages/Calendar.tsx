@@ -2,6 +2,7 @@
 import React from 'react';
 import TradeCalendar from '@/components/calendar/TradeCalendar';
 import { getTradesFromStorage } from '@/services/tradeService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CalendarPage = () => {
   const trades = getTradesFromStorage();
@@ -12,13 +13,18 @@ const CalendarPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Trade Calendar</h1>
-      <p className="text-muted-foreground">
-        View your trades in a calendar format. Days with trades are highlighted. Click on a day to see details.
-      </p>
-      
-      <TradeCalendar trades={trades} onDateClick={handleDateClick} />
+    <div className="flex justify-center items-center">
+      <Card className="w-full max-w-4xl">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold">Trade Calendar</CardTitle>
+          <p className="text-muted-foreground">
+            View your trades in a calendar format. Days with trades are highlighted. Click on a day to see details.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <TradeCalendar trades={trades} onDateClick={handleDateClick} />
+        </CardContent>
+      </Card>
     </div>
   );
 };

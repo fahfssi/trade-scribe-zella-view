@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -45,7 +46,7 @@ const formSchema = z.object({
   direction: z.enum(['long', 'short']),
   entryPrice: z.number().min(0),
   exitPrice: z.number().min(0),
-  quantity: z.number().min(1),
+  pnl: z.number(),
   strategy: z.string().min(1, { message: "Strategy is required" }),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -79,7 +80,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
       direction: 'long',
       entryPrice: 0,
       exitPrice: 0,
-      quantity: 1,
+      pnl: 0,
       strategy: '',
       notes: '',
       tags: [],
@@ -94,7 +95,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: editingTrade.direction,
         entryPrice: editingTrade.entryPrice,
         exitPrice: editingTrade.exitPrice,
-        quantity: editingTrade.quantity,
+        pnl: editingTrade.pnl,
         strategy: editingTrade.strategy,
         notes: editingTrade.notes || '',
         tags: editingTrade.tags,
@@ -107,7 +108,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: 'long',
         entryPrice: 0,
         exitPrice: 0,
-        quantity: 1,
+        pnl: 0,
         strategy: '',
         notes: '',
         tags: [],
@@ -128,10 +129,6 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
   };
 
   const onSubmit = (values: FormValues) => {
-    const pnl = values.direction === 'long'
-      ? (values.exitPrice - values.entryPrice) * values.quantity
-      : (values.entryPrice - values.exitPrice) * values.quantity;
-
     if (editingTrade && onUpdateTrade) {
       onUpdateTrade({
         ...editingTrade,
@@ -140,11 +137,11 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: values.direction,
         entryPrice: values.entryPrice,
         exitPrice: values.exitPrice,
-        quantity: values.quantity,
+        quantity: 1, // Default to 1 since we're not using quantity anymore
         strategy: values.strategy,
         notes: values.notes || '',
         tags: tags,
-        pnl: parseFloat(pnl.toFixed(2)),
+        pnl: parseFloat(values.pnl.toFixed(2)),
       });
     } else {
       onAddTrade({
@@ -153,11 +150,11 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: values.direction,
         entryPrice: values.entryPrice,
         exitPrice: values.exitPrice,
-        quantity: values.quantity,
+        quantity: 1, // Default to 1 since we're not using quantity anymore
         strategy: values.strategy,
         notes: values.notes || '',
         tags: tags,
-        pnl: parseFloat(pnl.toFixed(2)),
+        pnl: parseFloat(values.pnl.toFixed(2)),
       });
     }
 
@@ -304,18 +301,22 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="quantity"
+                name="pnl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantity</FormLabel>
+                    <FormLabel>Profit & Loss</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
-                        placeholder="1" 
+                        step="0.01" 
+                        placeholder="-100.00 or 100.00" 
                         value={field.value}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Enter negative value for loss, positive for profit
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
