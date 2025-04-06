@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -311,11 +310,14 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                         step="0.01" 
                         placeholder="-100.00 or 100.00" 
                         value={field.value}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === '' ? 0 : parseFloat(value));
+                        }}
                       />
                     </FormControl>
                     <FormDescription>
-                      Enter negative value for loss, positive for profit
+                      Enter negative value for loss (e.g. -100.25), positive for profit
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

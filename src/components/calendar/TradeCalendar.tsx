@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Dialog, 
   DialogContent, 
@@ -85,16 +84,16 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
           <div>{day.getDate()}</div>
           <div className="flex flex-col items-center gap-1">
             <Badge variant="outline" className={cn(
-              "text-[9px] px-1 py-0 whitespace-nowrap",
+              "text-[10px] px-1 py-0 whitespace-nowrap",
               isProfitable ? "border-profit text-profit" : "border-loss text-loss"
             )}>
               {trades.length} {trades.length === 1 ? 'trade' : 'trades'}
             </Badge>
             <div className={cn(
-              "text-[10px] font-medium flex items-center gap-0.5",
+              "text-[11px] font-medium flex items-center gap-0.5",
               isProfitable ? "text-profit" : "text-loss"
             )}>
-              <CircleDollarSign className="h-2.5 w-2.5" />
+              <CircleDollarSign className="h-3 w-3" />
               {isProfitable ? '+' : ''}{pnl.toFixed(2)}
             </div>
           </div>
@@ -119,7 +118,7 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
               <button
                 {...props}
                 className={
-                  "h-16 w-full p-0 font-normal aria-selected:opacity-100"
+                  "h-20 w-full p-0 font-normal aria-selected:opacity-100"
                 }
               >
                 {renderDay(date) || date.getDate()}
@@ -138,25 +137,29 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
           </DialogHeader>
           <div className="space-y-4">
             {tradesForSelectedDate.map((trade) => (
-              <Card key={trade.id}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">{trade.symbol}</h3>
-                    <Badge variant={trade.pnl >= 0 ? "default" : "destructive"}>
-                      {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
-                    </Badge>
+              <div key={trade.id} className="p-4 border rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium text-lg">{trade.symbol}</h3>
+                  <Badge variant={trade.pnl >= 0 ? "default" : "destructive"} className="text-sm">
+                    {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
+                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <div>Strategy: {trade.strategy}</div>
+                  <div>Direction: {trade.direction === 'long' ? 'Long' : 'Short'}</div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {trade.tags.map((tag, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
+                    ))}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    <div>Strategy: {trade.strategy}</div>
-                    <div>Direction: {trade.direction === 'long' ? 'Long' : 'Short'}</div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {trade.tags.map((tag, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
-                      ))}
+                  {trade.notes && (
+                    <div className="mt-2 p-2 bg-muted/50 rounded">
+                      <p className="text-xs font-medium">Notes:</p>
+                      <p className="text-xs">{trade.notes}</p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </DialogContent>
