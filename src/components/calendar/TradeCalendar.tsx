@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { Calendar } from '@/components/ui/calendar';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { TradeEntry } from '@/types/trade';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,18 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [tradesForSelectedDate, setTradesForSelectedDate] = useState<TradeEntry[]>([]);
+  
+  // Get the current month and year
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  // Find the first day of the month
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Find the number of days in the month
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
   // Group trades by date
   const tradesByDate = trades.reduce<Record<string, DateWithTrades>>((acc, trade) => {
@@ -47,9 +59,7 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
     return acc;
   }, {});
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-    
+  const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     
     // Format the date in YYYY-MM-DD format for lookup
@@ -62,71 +72,79 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
     onDateClick(date);
   };
 
-  // Custom day renderer
-  const renderDay = (day: Date) => {
-    // Use format from date-fns to ensure consistent date string formatting
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const dateData = tradesByDate[dateStr];
+  const renderDayCell = (day: number) => {
+    if (day === 0) return null; // Empty cell
     
-    if (!dateData) return undefined;
+    const date = new Date(currentYear, currentMonth, day);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = tradesByDate[dateStr];
     
-    const { trades, pnl } = dateData;
+    const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr;
+    
+    if (!dayData) {
+      return (
+        <div 
+          className={cn(
+            "h-full flex flex-col items-center justify-start p-2 cursor-pointer rounded-lg hover:bg-gray-100",
+            isToday && "border-2 border-primary"
+          )}
+          onClick={() => handleDateSelect(date)}
+        >
+          <div className="text-sm font-medium">{day}</div>
+        </div>
+      );
+    }
+    
+    const { trades, pnl } = dayData;
     const isProfitable = pnl >= 0;
+    const pnlColor = isProfitable ? 'bg-profit/20' : 'bg-loss/20';
+    const pnlTextColor = isProfitable ? 'text-profit' : 'text-loss';
     
     return (
-      <div className="relative w-full h-full">
-        <div className={cn(
-          "absolute inset-0 mt-1",
-          isProfitable ? "bg-profit/10" : "bg-loss/10",
-          "rounded-md"
-        )} />
-        <div className="relative flex flex-col h-full justify-between p-1">
-          <div>{day.getDate()}</div>
-          <div className="flex flex-col items-center gap-1">
-            <Badge variant="outline" className={cn(
-              "text-[10px] px-1 py-0 whitespace-nowrap",
-              isProfitable ? "border-profit text-profit" : "border-loss text-loss"
-            )}>
-              {trades.length} {trades.length === 1 ? 'trade' : 'trades'}
-            </Badge>
-            <div className={cn(
-              "text-[11px] font-medium flex items-center gap-0.5",
-              isProfitable ? "text-profit" : "text-loss"
-            )}>
-              <CircleDollarSign className="h-3 w-3" />
-              {isProfitable ? '+' : ''}{pnl.toFixed(2)}
-            </div>
-          </div>
+      <div 
+        className={cn(
+          "h-full min-h-[90px] flex flex-col items-center p-2 cursor-pointer rounded-lg hover:bg-gray-100",
+          isToday && "border-2 border-primary"
+        )}
+        onClick={() => handleDateSelect(date)}
+      >
+        <div className="text-sm font-medium mb-2">{day}</div>
+        <div className={`w-12 h-12 rounded-full ${pnlColor} flex items-center justify-center mb-1`}>
+          <span className={`text-sm font-medium ${pnlTextColor}`}>
+            {isProfitable ? '+' : ''}{Math.abs(pnl).toFixed(2)}
+          </span>
         </div>
+        <Badge variant="outline" className={cn(
+          "text-xs whitespace-nowrap",
+          isProfitable ? "border-profit text-profit" : "border-loss text-loss"
+        )}>
+          {trades.length} {trades.length === 1 ? 'trade' : 'trades'}
+        </Badge>
       </div>
     );
   };
 
+  // Create array of days for the month with empty cells for days before the month starts
+  const calendarDays = Array(42).fill(0).map((_, index) => {
+    const dayNumber = index - startingDayOfWeek + 1;
+    return dayNumber > 0 && dayNumber <= daysInMonth ? dayNumber : 0;
+  });
+
   return (
     <div className="space-y-4">
-      <Calendar
-        mode="single"
-        selected={selectedDate}
-        onSelect={handleDateSelect}
-        className="rounded-md border pointer-events-auto mx-auto w-full"
-        components={{
-          Day: ({ date, ...props }) => {
-            // Ensure date is a valid Date object
-            if (!date) return null;
-            
-            return (
-              <button
-                {...props}
-                className={
-                  "h-20 w-full p-0 font-normal aria-selected:opacity-100"
-                }
-              >
-                {renderDay(date) || date.getDate()}
-              </button>
-            );
-          },
-        }}
-      />
+      <div className="grid grid-cols-7 gap-2">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName) => (
+          <div key={dayName} className="text-center text-sm font-medium text-muted-foreground p-2">
+            {dayName}
+          </div>
+        ))}
+        
+        {calendarDays.map((day, i) => (
+          <div key={i} className="aspect-square border rounded-lg overflow-hidden">
+            {renderDayCell(day)}
+          </div>
+        ))}
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -134,6 +152,9 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
             <DialogTitle>
               Trades on {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}
             </DialogTitle>
+            <DialogDescription>
+              Details of trades executed on this day
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {tradesForSelectedDate.map((trade) => (
@@ -148,7 +169,7 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
                   <div>Strategy: {trade.strategy}</div>
                   <div>Direction: {trade.direction === 'long' ? 'Long' : 'Short'}</div>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {trade.tags.map((tag, i) => (
+                    {trade.tags?.map((tag, i) => (
                       <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
                     ))}
                   </div>

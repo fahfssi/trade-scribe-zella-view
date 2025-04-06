@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -30,6 +31,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -169,6 +171,9 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingTrade ? 'Edit Trade' : 'Add New Trade'}</DialogTitle>
+          <DialogDescription>
+            Record your trade details and track your performance over time.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -306,11 +311,17 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                     <FormLabel>Profit & Loss</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        step="0.01" 
+                        type="text" 
+                        inputMode="decimal" 
                         placeholder="-100.00 or 100.00" 
-                        value={field.value}
+                        value={field.value === 0 && !String(field.value).startsWith('-') ? '' : field.value}
                         onChange={(e) => {
+                          // Allow the minus sign as the first character without immediately converting to 0
+                          if (e.target.value === '-') {
+                            field.onChange(-0);
+                            return;
+                          }
+                          
                           const value = e.target.value;
                           field.onChange(value === '' ? 0 : parseFloat(value));
                         }}

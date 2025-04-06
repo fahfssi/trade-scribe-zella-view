@@ -13,16 +13,16 @@ const CalendarPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Trade Calendar</CardTitle>
           <p className="text-muted-foreground">
-            View your trades in a calendar format. Days with trades are highlighted with profit/loss information.
+            View your trades in a calendar format. Days with trades display profit/loss information.
           </p>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="calendar-container" style={{ height: "calc(100vh - 16rem)" }}>
+          <div className="calendar-container" style={{ height: "calc(100vh - 12rem)" }}>
             <TradeCalendar trades={trades} onDateClick={handleDateClick} />
           </div>
         </CardContent>
