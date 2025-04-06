@@ -34,8 +34,8 @@ const PerformanceByStrategy: React.FC<PerformanceByStrategyProps> = ({ data, tit
               <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" />
               <Tooltip 
                 formatter={(value, name) => {
-                  if (name === 'pnl') return [`$${value.toFixed(2)}`, 'P&L'];
-                  if (name === 'winRate') return [`${value}%`, 'Win Rate'];
+                  if (name === 'pnl') return [`$${Number(value).toFixed(2)}`, 'P&L'];
+                  if (name === 'winRate') return [`${Number(value)}%`, 'Win Rate'];
                   return [value, name];
                 }}
               />

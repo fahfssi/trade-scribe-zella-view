@@ -52,7 +52,8 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
     
     setSelectedDate(date);
     
-    const dateStr = date.toISOString().split('T')[0];
+    // Format the date in YYYY-MM-DD format for lookup
+    const dateStr = format(date, 'yyyy-MM-dd');
     const tradesForDate = tradesByDate[dateStr]?.trades || [];
     
     setTradesForSelectedDate(tradesForDate);
@@ -63,7 +64,8 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
 
   // Custom day renderer
   const renderDay = (day: Date) => {
-    const dateStr = day.toISOString().split('T')[0];
+    // Use format from date-fns to ensure consistent date string formatting
+    const dateStr = format(day, 'yyyy-MM-dd');
     const dateData = tradesByDate[dateStr];
     
     if (!dateData) return undefined;
@@ -104,19 +106,24 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            className="rounded-md border"
+            className="rounded-md border pointer-events-auto"
             components={{
-              Day: ({ day, ...props }) => (
-                <button
-                  {...props}
-                  className={cn(
-                    props.className,
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                  )}
-                >
-                  {renderDay(day) || day.getDate()}
-                </button>
-              ),
+              Day: ({ date, ...props }) => {
+                // Ensure date is a valid Date object
+                if (!date) return null;
+                
+                return (
+                  <button
+                    {...props}
+                    className={cn(
+                      props.className,
+                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                    )}
+                  >
+                    {renderDay(date) || date.getDate()}
+                  </button>
+                );
+              },
             }}
           />
         </CardContent>
