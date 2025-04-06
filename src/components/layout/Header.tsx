@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChartLineUp, Calendar, BookOpen, PieChart, Menu, X } from 'lucide-react';
+import { ChartLine, Calendar, BookOpen, PieChart, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,7 +18,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
           <Link to="/" className="font-bold text-2xl text-tradezella-primary flex items-center">
-            <ChartLineUp className="mr-2" size={28} />
+            <ChartLine className="mr-2" size={28} />
             <span>TradeZella</span>
           </Link>
         </div>
@@ -61,7 +60,7 @@ const Header = () => {
               Calendar
             </Link>
             <Link to="/playbooks" className="flex items-center text-gray-700 hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
-              <ChartLineUp size={20} className="mr-2" />
+              <ChartLine size={20} className="mr-2" />
               Playbooks
             </Link>
           </nav>
