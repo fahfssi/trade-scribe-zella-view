@@ -38,7 +38,7 @@ const sampleTrades: TradeEntry[] = [
     exitPrice: 410.75,
     quantity: 3,
     strategy: 'Gap Fill',
-    notes: 'Trade didn't work out, market reversed shortly after entry.',
+    notes: 'Trade didn\'t work out, market reversed shortly after entry.',
     tags: ['gap fill', 'loss'],
     pnl: -13.35,
   },
