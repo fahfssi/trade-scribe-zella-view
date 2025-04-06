@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,9 +57,17 @@ interface AddTradeFormProps {
   isOpen: boolean;
   onClose: () => void;
   onAddTrade: (trade: Omit<TradeEntry, 'id'>) => void;
+  onUpdateTrade?: (trade: TradeEntry) => void;
+  editingTrade?: TradeEntry;
 }
 
-const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade }) => {
+const AddTradeForm: React.FC<AddTradeFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  onAddTrade,
+  onUpdateTrade,
+  editingTrade 
+}) => {
   const [tags, setTags] = React.useState<string[]>([]);
   const [newTag, setNewTag] = React.useState('');
 
@@ -79,6 +86,36 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
     },
   });
 
+  useEffect(() => {
+    if (editingTrade) {
+      form.reset({
+        symbol: editingTrade.symbol,
+        date: new Date(editingTrade.date),
+        direction: editingTrade.direction,
+        entryPrice: editingTrade.entryPrice,
+        exitPrice: editingTrade.exitPrice,
+        quantity: editingTrade.quantity,
+        strategy: editingTrade.strategy,
+        notes: editingTrade.notes || '',
+        tags: editingTrade.tags,
+      });
+      setTags(editingTrade.tags || []);
+    } else {
+      form.reset({
+        symbol: '',
+        date: new Date(),
+        direction: 'long',
+        entryPrice: 0,
+        exitPrice: 0,
+        quantity: 1,
+        strategy: '',
+        notes: '',
+        tags: [],
+      });
+      setTags([]);
+    }
+  }, [editingTrade, form]);
+
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
@@ -95,20 +132,35 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
       ? (values.exitPrice - values.entryPrice) * values.quantity
       : (values.entryPrice - values.exitPrice) * values.quantity;
 
-    onAddTrade({
-      symbol: values.symbol,
-      date: values.date.toISOString(),
-      direction: values.direction,
-      entryPrice: values.entryPrice,
-      exitPrice: values.exitPrice,
-      quantity: values.quantity,
-      strategy: values.strategy,
-      notes: values.notes || '',
-      tags: tags,
-      pnl: parseFloat(pnl.toFixed(2)),
-    });
+    if (editingTrade && onUpdateTrade) {
+      onUpdateTrade({
+        ...editingTrade,
+        symbol: values.symbol,
+        date: values.date.toISOString(),
+        direction: values.direction,
+        entryPrice: values.entryPrice,
+        exitPrice: values.exitPrice,
+        quantity: values.quantity,
+        strategy: values.strategy,
+        notes: values.notes || '',
+        tags: tags,
+        pnl: parseFloat(pnl.toFixed(2)),
+      });
+    } else {
+      onAddTrade({
+        symbol: values.symbol,
+        date: values.date.toISOString(),
+        direction: values.direction,
+        entryPrice: values.entryPrice,
+        exitPrice: values.exitPrice,
+        quantity: values.quantity,
+        strategy: values.strategy,
+        notes: values.notes || '',
+        tags: tags,
+        pnl: parseFloat(pnl.toFixed(2)),
+      });
+    }
 
-    // Reset form
     form.reset();
     setTags([]);
     onClose();
@@ -120,7 +172,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Trade</DialogTitle>
+          <DialogTitle>{editingTrade ? 'Edit Trade' : 'Add New Trade'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -191,6 +243,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -218,8 +271,8 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
                         type="number" 
                         step="0.01" 
                         placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -238,8 +291,8 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
                         type="number" 
                         step="0.01" 
                         placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -259,8 +312,8 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
                       <Input 
                         type="number" 
                         placeholder="1" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -339,7 +392,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({ isOpen, onClose, onAddTrade
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Save Trade</Button>
+              <Button type="submit">{editingTrade ? 'Update' : 'Save'} Trade</Button>
             </div>
           </form>
         </Form>
