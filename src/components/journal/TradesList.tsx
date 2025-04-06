@@ -10,19 +10,20 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { TradeEntry } from '@/types/trade';
 import { cn } from '@/lib/utils';
 
 interface TradesListProps {
   trades: TradeEntry[];
   onEditTrade: (id: string) => void;
+  onDeleteTrade: (id: string) => void;
 }
 
 type SortField = 'date' | 'symbol' | 'strategy' | 'type' | 'pnl';
 type SortDirection = 'asc' | 'desc';
 
-const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade }) => {
+const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade, onDeleteTrade }) => {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -103,7 +104,7 @@ const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedTrades.map((trade) => (
+          {trades.map((trade) => (
             <TableRow key={trade.id}>
               <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
               <TableCell>{trade.symbol}</TableCell>
@@ -132,13 +133,25 @@ const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade }) => {
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEditTrade(trade.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEditTrade(trade.id)}
+                    aria-label="Edit trade"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDeleteTrade(trade.id)}
+                    className="text-destructive hover:bg-destructive/10"
+                    aria-label="Delete trade"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

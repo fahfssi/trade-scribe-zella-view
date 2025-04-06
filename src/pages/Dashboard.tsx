@@ -1,15 +1,31 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import ProfitLossChart from '@/components/dashboard/ProfitLossChart';
 import PerformanceByStrategy from '@/components/dashboard/PerformanceByStrategy';
-import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy } from '@/services/tradeService';
+import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy, getTradesFromStorage } from '@/services/tradeService';
 import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock } from 'lucide-react';
 
 const Dashboard = () => {
-  const stats = getTradeStatistics();
-  const pnlByDay = getPnlByDay();
-  const performanceByStrategy = getPerformanceByStrategy();
+  const [stats, setStats] = useState(getTradeStatistics());
+  const [pnlByDay, setPnlByDay] = useState(getPnlByDay());
+  const [performanceByStrategy, setPerformanceByStrategy] = useState(getPerformanceByStrategy());
+  
+  // Re-fetch data when the component is mounted or when changes happen
+  useEffect(() => {
+    // Use a storage event listener to detect changes from other components
+    const updateDashboard = () => {
+      setStats(getTradeStatistics());
+      setPnlByDay(getPnlByDay());
+      setPerformanceByStrategy(getPerformanceByStrategy());
+    };
+    
+    // Poll for changes every second (for development)
+    const intervalId = setInterval(updateDashboard, 1000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
   return (
     <div className="space-y-6">

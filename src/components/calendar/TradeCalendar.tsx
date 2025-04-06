@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -115,10 +114,9 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick }) =>
                 return (
                   <button
                     {...props}
-                    className={cn(
-                      props.className,
+                    className={
                       "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                    )}
+                    }
                   >
                     {renderDay(date) || date.getDate()}
                   </button>

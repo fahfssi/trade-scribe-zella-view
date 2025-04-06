@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react';
 import TradesList from '@/components/journal/TradesList';
 import AddTradeForm from '@/components/journal/AddTradeForm';
 import { TradeEntry } from '@/types/trade';
-import { getTradesFromStorage, addTrade, updateTrade } from '@/services/tradeService';
+import { getTradesFromStorage, addTrade, updateTrade, deleteTrade } from '@/services/tradeService';
 import { useToast } from '@/hooks/use-toast';
 
 const Journal = () => {
@@ -29,6 +29,26 @@ const Journal = () => {
     setIsAddTradeOpen(true);
   };
 
+  const handleDeleteTrade = (id: string) => {
+    deleteTrade(id);
+    setTrades(trades.filter(t => t.id !== id));
+    
+    toast({
+      title: "Trade Deleted",
+      description: "Trade has been removed from your journal.",
+    });
+  };
+
+  const handleUpdateTrade = (updatedTrade: TradeEntry) => {
+    const updated = updateTrade(updatedTrade);
+    setTrades(trades.map(t => t.id === updated.id ? updated : t));
+    
+    toast({
+      title: "Trade Updated",
+      description: `${updatedTrade.symbol} trade has been updated.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -38,7 +58,11 @@ const Journal = () => {
         </Button>
       </div>
       
-      <TradesList trades={trades} onEditTrade={handleEditTrade} />
+      <TradesList 
+        trades={trades} 
+        onEditTrade={handleEditTrade} 
+        onDeleteTrade={handleDeleteTrade} 
+      />
       
       <AddTradeForm
         isOpen={isAddTradeOpen}
@@ -47,6 +71,8 @@ const Journal = () => {
           setEditingTradeId(null);
         }}
         onAddTrade={handleAddTrade}
+        onUpdateTrade={handleUpdateTrade}
+        editingTrade={editingTradeId ? trades.find(t => t.id === editingTradeId) : undefined}
       />
     </div>
   );
