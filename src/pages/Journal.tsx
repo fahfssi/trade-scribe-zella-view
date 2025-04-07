@@ -4,29 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Plus, FileUp, Download } from 'lucide-react';
 import TradesList from '@/components/journal/TradesList';
 import AddTradeForm from '@/components/journal/AddTradeForm';
-import { TradeEntry, BrokerReport } from '@/types/trade';
+import { TradeEntry } from '@/types/trade';
 import { getTradesFromStorage, addTrade, updateTrade, deleteTrade, importCSV } from '@/services/tradeService';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 const Journal = () => {
   const [trades, setTrades] = useState<TradeEntry[]>(() => getTradesFromStorage());
   const [isAddTradeOpen, setIsAddTradeOpen] = useState(false);
   const [editingTradeId, setEditingTradeId] = useState<string | null>(null);
-  const [brokerReports, setBrokerReports] = useState<BrokerReport[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
-
-  // Load broker reports from localStorage
-  useEffect(() => {
-    const storedReports = localStorage.getItem('brokerReports');
-    if (storedReports) {
-      setBrokerReports(JSON.parse(storedReports));
-    }
-  }, []);
-
+  
   const handleAddTrade = (newTrade: Omit<TradeEntry, 'id'>) => {
     const trade = addTrade(newTrade);
     setTrades([trade, ...trades.filter(t => t.id !== trade.id)]);
@@ -81,10 +71,6 @@ const Journal = () => {
         
         if (result.success) {
           setTrades(result.trades || []);
-          
-          if (result.report) {
-            setBrokerReports((prev) => [...prev, result.report!]);
-          }
           
           toast({
             title: "CSV Imported",
@@ -217,51 +203,6 @@ const Journal = () => {
           sellFillId, buyPrice, sellPrice, pnl, boughtTimestamp, soldTimestamp, and duration.
         </AlertDescription>
       </Alert>
-      
-      {brokerReports.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Broker Reports</CardTitle>
-            <CardDescription>
-              Imported performance reports from your broker
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {brokerReports.map((report, index) => (
-                <Card key={index} className="border-dashed">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{report.name}</CardTitle>
-                    <CardDescription>{new Date(report.date).toLocaleDateString()}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-1 pt-0 text-sm">
-                    <div className="flex justify-between">
-                      <span>Win Rate:</span>
-                      <span className="font-medium">{report.winRate.toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total P&L:</span>
-                      <span className={`font-medium ${report.totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                        ${report.totalPnl.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Trades:</span>
-                      <span className="font-medium">{report.tradeCount}</span>
-                    </div>
-                    {report.riskRewardRatio !== undefined && (
-                      <div className="flex justify-between">
-                        <span>Avg R:R:</span>
-                        <span className="font-medium">{report.riskRewardRatio.toFixed(2)}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
       
       <TradesList 
         trades={trades} 
