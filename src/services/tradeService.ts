@@ -1,4 +1,3 @@
-
 import { TradeEntry, BrokerReport } from '@/types/trade';
 
 // Sample data for the app
@@ -150,14 +149,31 @@ export const importCSV = (csvText: string): {
     const lines = csvText.split('\n').filter(line => line.trim());
     const headers = lines[0].split(',').map(h => h.trim());
     
-    // Validate CSV structure
-    const requiredHeaders = ['symbol', 'date', 'direction', 'entry_price', 'exit_price', 'strategy', 'pnl'];
-    const missingHeaders = requiredHeaders.filter(h => !headers.some(header => header.toLowerCase().includes(h)));
+    // Map Excel headers to our internal structure
+    const headerMap: Record<string, string> = {
+      'symbol': 'symbol',
+      '_priceFormat': 'strategy', // Using this as strategy
+      '_priceFormatTy': 'tags',
+      'tickSize': 'tickSize',
+      'buyFillId': 'buyFillId',
+      'sellFillId': 'sellFillId',
+      'qty': 'quantity',
+      'buyPrice': 'entryPrice',
+      'sellPrice': 'exitPrice',
+      'pnl': 'pnl',
+      'boughtTimestamp': 'boughtTimestamp',
+      'soldTimestamp': 'soldTimestamp',
+      'duration': 'duration'
+    };
     
-    if (missingHeaders.length > 0) {
+    // Check if we have at least the minimal required columns
+    const hasMinimalColumns = headers.some(h => h.toLowerCase().includes('symbol')) && 
+                              headers.some(h => h.toLowerCase().includes('pnl'));
+    
+    if (!hasMinimalColumns) {
       return {
         success: false,
-        error: `CSV missing required headers: ${missingHeaders.join(', ')}`
+        error: 'CSV format not recognized. Please ensure it contains at least Symbol and PNL columns.'
       };
     }
     
@@ -170,6 +186,8 @@ export const importCSV = (csvText: string): {
     let totalLoss = 0;
     let largestWin = 0;
     let largestLoss = 0;
+    let totalRiskReward = 0;
+    let tradesWithRR = 0;
     
     // Parse each line after the header
     for (let i = 1; i < lines.length; i++) {
@@ -177,26 +195,81 @@ export const importCSV = (csvText: string): {
       if (!line) continue;
       
       const values = line.split(',').map(v => v.trim());
-      if (values.length !== headers.length) continue;
+      if (values.length < 3) continue; // Need at least a few columns
       
       // Create a map of header->value
       const rowData: Record<string, string> = {};
       headers.forEach((header, index) => {
-        rowData[header.toLowerCase()] = values[index];
+        if (index < values.length) {
+          rowData[header.toLowerCase()] = values[index];
+        }
       });
       
-      // Extract data
+      // Extract data based on our mapping or with sensible defaults
       const symbol = rowData.symbol || '';
-      const date = new Date(rowData.date).toISOString();
-      const direction = (rowData.direction?.toLowerCase().includes('buy') || 
-                         rowData.direction?.toLowerCase().includes('long')) ? 'long' : 'short';
-      const entryPrice = parseFloat(rowData.entry_price || rowData.entryprice || '0');
-      const exitPrice = parseFloat(rowData.exit_price || rowData.exitprice || '0');
-      const pnl = parseFloat(rowData.pnl || '0');
-      const strategy = rowData.strategy || 'Unknown';
-      const session = rowData.session || 'New York AM';
-      const riskReward = parseFloat(rowData.risk_reward || rowData.riskreward || '0') || undefined;
-      const tags = rowData.tags?.split(';').map(tag => tag.trim()) || [];
+      
+      if (!symbol) continue; // Skip rows without a symbol
+      
+      // Determine direction based on PNL and buy/sell prices
+      const pnl = parseFloat(rowData.pnl?.replace(/[()$]/g, '') || '0');
+      let direction: TradeDirection = 'long';
+      
+      // If we have buy and sell prices, we can determine direction
+      const buyPrice = parseFloat(rowData.buyprice || '0');
+      const sellPrice = parseFloat(rowData.sellprice || '0');
+      
+      if (buyPrice && sellPrice) {
+        direction = sellPrice > buyPrice ? 'long' : 'short';
+      } else {
+        // Otherwise use the sign of PNL with _priceFormat
+        const priceFormat = parseInt(rowData._priceformat || '0');
+        direction = (priceFormat < 0) ? 'short' : 'long';
+      }
+      
+      // Handle timestamps
+      let date = new Date().toISOString();
+      if (rowData.boughttimestamp) {
+        try {
+          date = new Date(rowData.boughttimestamp).toISOString();
+        } catch (e) {
+          // Use current date if parsing fails
+        }
+      }
+      
+      // Calculate or parse risk:reward if available
+      const tickSize = parseFloat(rowData.ticksize || '0');
+      let riskReward: number | undefined = undefined;
+      
+      if (tickSize && pnl) {
+        // Simple estimate based on tick size and PNL
+        riskReward = Math.abs(pnl) / (tickSize * 2);
+        
+        if (riskReward > 0) {
+          totalRiskReward += riskReward;
+          tradesWithRR++;
+        }
+      }
+      
+      // Determine session based on timestamp
+      let session: TradingSession | undefined = undefined;
+      if (rowData.boughttimestamp) {
+        const tradeHour = new Date(rowData.boughttimestamp).getUTCHours();
+        
+        if (tradeHour >= 0 && tradeHour < 8) {
+          session = 'Asia';
+        } else if (tradeHour >= 8 && tradeHour < 12) {
+          session = 'London';
+        } else if (tradeHour >= 12 && tradeHour < 16) {
+          session = 'New York AM';
+        } else if (tradeHour >= 16 && tradeHour < 20) {
+          session = 'New York PM';
+        } else {
+          session = 'London Close';
+        }
+      }
+      
+      // Extract tags if available
+      const tags = rowData._priceformatty ? [rowData._priceformatty] : [];
       
       // Create trade object
       const newTrade: TradeEntry = {
@@ -204,15 +277,19 @@ export const importCSV = (csvText: string): {
         symbol,
         date,
         direction,
-        entryPrice,
-        exitPrice,
-        quantity: 1, // Default
-        strategy,
+        entryPrice: buyPrice || 0,
+        exitPrice: sellPrice || 0,
+        quantity: parseInt(rowData.qty || '1'),
+        strategy: rowData._priceformat || 'Unknown',
         pnl,
         tags,
-        session: session as any,
+        session,
         riskReward,
-        notes: rowData.notes || '',
+        buyFillId: rowData.buyfillid,
+        sellFillId: rowData.sellfillid,
+        boughtTimestamp: rowData.boughttimestamp,
+        soldTimestamp: rowData.soldtimestamp,
+        duration: rowData.duration,
       };
       
       newTrades.push(newTrade);
@@ -229,6 +306,14 @@ export const importCSV = (csvText: string): {
         largestLoss = Math.max(largestLoss, Math.abs(pnl));
       }
     }
+
+    // Skip if no trades were found
+    if (newTrades.length === 0) {
+      return {
+        success: false,
+        error: 'No valid trades found in the CSV file.'
+      };
+    }
     
     // Create broker report
     const report: BrokerReport = {
@@ -241,8 +326,13 @@ export const importCSV = (csvText: string): {
       averageWin: winCount > 0 ? totalWin / winCount : 0,
       averageLoss: lossCount > 0 ? totalLoss / lossCount : 0,
       largestWin,
-      largestLoss
+      largestLoss,
+      riskRewardRatio: tradesWithRR > 0 ? totalRiskReward / tradesWithRR : undefined
     };
+    
+    // Store broker report
+    const existingReports = JSON.parse(localStorage.getItem('brokerReports') || '[]');
+    localStorage.setItem('brokerReports', JSON.stringify([...existingReports, report]));
     
     // Save all trades
     saveTradesToStorage([...newTrades, ...trades]);

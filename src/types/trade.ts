@@ -16,7 +16,16 @@ export interface TradeEntry {
   notes?: string;
   tags?: string[];
   session?: TradingSession;
-  riskReward?: number; // Added risk-to-reward ratio
+  riskReward?: number;
+  // Excel format specific fields
+  buyFillId?: string;
+  sellFillId?: string;
+  buyPrice?: number;
+  sellPrice?: number;
+  boughtTimestamp?: string;
+  soldTimestamp?: string;
+  duration?: string;
+  size?: number;
 }
 
 // New interface for imported CSV data
@@ -31,4 +40,5 @@ export interface BrokerReport {
   averageLoss: number;
   largestWin: number;
   largestLoss: number;
+  riskRewardRatio?: number;
 }
