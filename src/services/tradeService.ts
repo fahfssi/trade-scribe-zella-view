@@ -1,4 +1,3 @@
-
 import { TradeEntry } from '@/types/trade';
 
 // Sample data for the app
@@ -209,4 +208,38 @@ export const getPerformanceByStrategy = () => {
       tradeCount: trades.length
     };
   }).sort((a, b) => b.pnl - a.pnl);
+};
+
+export const getSessionStatistics = () => {
+  const trades = getTradesFromStorage();
+  
+  // Define session data structure
+  const sessionStats: Record<string, { 
+    count: number; 
+    pnl: number;
+    winCount: number;
+    lossCount: number;
+  }> = {};
+  
+  // Initialize sessions
+  ['Asia', 'London', 'New York AM', 'New York PM', 'London Close'].forEach(session => {
+    sessionStats[session] = { count: 0, pnl: 0, winCount: 0, lossCount: 0 };
+  });
+  
+  // Calculate stats per session
+  trades.forEach(trade => {
+    const session = trade.session || 'New York AM'; // Default if not set
+    const stats = sessionStats[session];
+    
+    stats.count++;
+    stats.pnl += trade.pnl;
+    
+    if (trade.pnl > 0) {
+      stats.winCount++;
+    } else if (trade.pnl < 0) {
+      stats.lossCount++;
+    }
+  });
+  
+  return sessionStats;
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -41,6 +40,14 @@ import { cn } from '@/lib/utils';
 import { TradeEntry } from '@/types/trade';
 import { Badge } from '@/components/ui/badge';
 
+const tradingSessions = [
+  "Asia",
+  "London",
+  "New York AM",
+  "New York PM",
+  "London Close"
+] as const;
+
 const formSchema = z.object({
   symbol: z.string().min(1, { message: "Symbol is required" }),
   date: z.date(),
@@ -51,6 +58,7 @@ const formSchema = z.object({
   strategy: z.string().min(1, { message: "Strategy is required" }),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  session: z.enum(tradingSessions),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -85,6 +93,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
       strategy: '',
       notes: '',
       tags: [],
+      session: 'New York AM',
     },
   });
 
@@ -100,6 +109,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         strategy: editingTrade.strategy,
         notes: editingTrade.notes || '',
         tags: editingTrade.tags,
+        session: editingTrade.session || 'New York AM',
       });
       setTags(editingTrade.tags || []);
     } else {
@@ -113,6 +123,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         strategy: '',
         notes: '',
         tags: [],
+        session: 'New York AM',
       });
       setTags([]);
     }
@@ -143,6 +154,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         notes: values.notes || '',
         tags: tags,
         pnl: parseFloat(values.pnl.toFixed(2)),
+        session: values.session,
       });
     } else {
       onAddTrade({
@@ -156,6 +168,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         notes: values.notes || '',
         tags: tags,
         pnl: parseFloat(values.pnl.toFixed(2)),
+        session: values.session,
       });
     }
 
@@ -314,14 +327,8 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                         type="text" 
                         inputMode="decimal" 
                         placeholder="-100.00 or 100.00" 
-                        value={field.value === 0 && !String(field.value).startsWith('-') ? '' : field.value}
+                        value={field.value === 0 ? '' : field.value}
                         onChange={(e) => {
-                          // Allow the minus sign as the first character without immediately converting to 0
-                          if (e.target.value === '-') {
-                            field.onChange(-0);
-                            return;
-                          }
-                          
                           const value = e.target.value;
                           field.onChange(value === '' ? 0 : parseFloat(value));
                         }}
@@ -349,6 +356,38 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="session"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trading Session</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select trading session" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tradingSessions.map((session) => (
+                        <SelectItem key={session} value={session}>
+                          {session}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select which market session this trade was executed in
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormItem>
               <FormLabel>Tags</FormLabel>

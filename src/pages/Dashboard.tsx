@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import ProfitLossChart from '@/components/dashboard/ProfitLossChart';
 import PerformanceByStrategy from '@/components/dashboard/PerformanceByStrategy';
+import SessionsChart from '@/components/dashboard/SessionsChart';
 import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy, getTradesFromStorage } from '@/services/tradeService';
 import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock } from 'lucide-react';
 
@@ -10,20 +10,52 @@ const Dashboard = () => {
   const [stats, setStats] = useState(getTradeStatistics());
   const [pnlByDay, setPnlByDay] = useState(getPnlByDay());
   const [performanceByStrategy, setPerformanceByStrategy] = useState(getPerformanceByStrategy());
+  const [sessionData, setSessionData] = useState<any[]>([]);
   
-  // Re-fetch data when the component is mounted or when changes happen
+  const getSessionsData = () => {
+    const trades = getTradesFromStorage();
+    const sessionCounts: Record<string, number> = {};
+    const sessionPnl: Record<string, number> = {};
+    
+    const sessionColors: Record<string, string> = {
+      'Asia': '#4ade80',
+      'London': '#3b82f6',
+      'New York AM': '#f97316',
+      'New York PM': '#ec4899',
+      'London Close': '#8b5cf6',
+    };
+    
+    ['Asia', 'London', 'New York AM', 'New York PM', 'London Close'].forEach(session => {
+      sessionCounts[session] = 0;
+      sessionPnl[session] = 0;
+    });
+    
+    trades.forEach(trade => {
+      const session = trade.session || 'New York AM';
+      sessionCounts[session] = (sessionCounts[session] || 0) + 1;
+      sessionPnl[session] = (sessionPnl[session] || 0) + trade.pnl;
+    });
+    
+    return Object.keys(sessionCounts).map(session => ({
+      name: session,
+      value: sessionCounts[session],
+      pnl: sessionPnl[session],
+      color: sessionColors[session] || '#6b7280'
+    }));
+  };
+  
   useEffect(() => {
-    // Use a storage event listener to detect changes from other components
     const updateDashboard = () => {
       setStats(getTradeStatistics());
       setPnlByDay(getPnlByDay());
       setPerformanceByStrategy(getPerformanceByStrategy());
+      setSessionData(getSessionsData());
     };
     
-    // Poll for changes every second (for development)
+    updateDashboard();
+    
     const intervalId = setInterval(updateDashboard, 1000);
     
-    // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
 
@@ -74,30 +106,42 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-6 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium mb-1">Best Trade</h3>
-            <p className="text-2xl font-bold text-profit">
-              +${stats.averageWin.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground">Average winning trade</p>
-          </div>
-          <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-            <ArrowUp className="h-6 w-6 text-profit" />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-1">
+          <SessionsChart 
+            data={sessionData} 
+            title="Trading Sessions" 
+            description="Distribution of trades by market session"
+          />
         </div>
-        
-        <div className="p-6 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium mb-1">Worst Trade</h3>
-            <p className="text-2xl font-bold text-loss">
-              -${stats.averageLoss.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground">Average losing trade</p>
-          </div>
-          <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-            <ArrowDown className="h-6 w-6 text-loss" />
+
+        <div className="md:col-span-1">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="p-6 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Best Trade</h3>
+                <p className="text-2xl font-bold text-profit">
+                  +${stats.averageWin.toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">Average winning trade</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                <ArrowUp className="h-6 w-6 text-profit" />
+              </div>
+            </div>
+            
+            <div className="p-6 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Worst Trade</h3>
+                <p className="text-2xl font-bold text-loss">
+                  -${stats.averageLoss.toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">Average losing trade</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                <ArrowDown className="h-6 w-6 text-loss" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
