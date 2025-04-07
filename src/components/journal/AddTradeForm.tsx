@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -59,6 +60,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
   session: z.enum(tradingSessions),
+  riskReward: z.number().min(0).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -94,6 +96,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
       notes: '',
       tags: [],
       session: 'New York AM',
+      riskReward: 0,
     },
   });
 
@@ -110,6 +113,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         notes: editingTrade.notes || '',
         tags: editingTrade.tags,
         session: editingTrade.session || 'New York AM',
+        riskReward: editingTrade.riskReward || 0,
       });
       setTags(editingTrade.tags || []);
     } else {
@@ -124,6 +128,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         notes: '',
         tags: [],
         session: 'New York AM',
+        riskReward: 0,
       });
       setTags([]);
     }
@@ -149,12 +154,13 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: values.direction,
         entryPrice: values.entryPrice,
         exitPrice: values.exitPrice,
-        quantity: 1, // Default to 1 since we're not using quantity anymore
+        quantity: 1,
         strategy: values.strategy,
         notes: values.notes || '',
         tags: tags,
         pnl: parseFloat(values.pnl.toFixed(2)),
         session: values.session,
+        riskReward: values.riskReward,
       });
     } else {
       onAddTrade({
@@ -163,12 +169,13 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
         direction: values.direction,
         entryPrice: values.entryPrice,
         exitPrice: values.exitPrice,
-        quantity: 1, // Default to 1 since we're not using quantity anymore
+        quantity: 1,
         strategy: values.strategy,
         notes: values.notes || '',
         tags: tags,
         pnl: parseFloat(values.pnl.toFixed(2)),
         session: values.session,
+        riskReward: values.riskReward,
       });
     }
 
@@ -315,7 +322,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="pnl"
@@ -330,7 +337,11 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                         value={field.value === 0 ? '' : field.value}
                         onChange={(e) => {
                           const value = e.target.value;
-                          field.onChange(value === '' ? 0 : parseFloat(value));
+                          if (value === '-') {
+                            field.onChange(-0);
+                          } else {
+                            field.onChange(value === '' ? 0 : parseFloat(value));
+                          }
                         }}
                       />
                     </FormControl>
@@ -351,6 +362,30 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                     <FormControl>
                       <Input placeholder="e.g., Breakout" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="riskReward"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Risk-to-Reward</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.1" 
+                        min="0"
+                        placeholder="e.g., 2.5" 
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter your risk-to-reward ratio (e.g. 2.5)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

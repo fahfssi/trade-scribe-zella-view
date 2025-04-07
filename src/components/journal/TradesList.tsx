@@ -20,7 +20,7 @@ interface TradesListProps {
   onDeleteTrade: (id: string) => void;
 }
 
-type SortField = 'date' | 'symbol' | 'strategy' | 'type' | 'pnl';
+type SortField = 'date' | 'symbol' | 'strategy' | 'type' | 'pnl' | 'riskReward';
 type SortDirection = 'asc' | 'desc';
 
 const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade, onDeleteTrade }) => {
@@ -45,6 +45,12 @@ const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade, onDeleteTr
     
     if (sortField === 'pnl') {
       return sortDirection === 'asc' ? a.pnl - b.pnl : b.pnl - a.pnl;
+    }
+    
+    if (sortField === 'riskReward') {
+      const aRR = a.riskReward || 0;
+      const bRR = b.riskReward || 0;
+      return sortDirection === 'asc' ? aRR - bRR : bRR - aRR;
     }
     
     // For string comparisons
@@ -99,12 +105,21 @@ const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade, onDeleteTr
                 P&L {getSortIcon('pnl')}
               </div>
             </TableHead>
+            <TableHead 
+              className="cursor-pointer"
+              onClick={() => handleSort('riskReward')}
+            >
+              <div className="flex items-center">
+                R:R {getSortIcon('riskReward')}
+              </div>
+            </TableHead>
+            <TableHead>Session</TableHead>
             <TableHead>Tags</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {trades.map((trade) => (
+          {sortedTrades.map((trade) => (
             <TableRow key={trade.id}>
               <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
               <TableCell>{trade.symbol}</TableCell>
@@ -126,10 +141,16 @@ const TradesList: React.FC<TradesListProps> = ({ trades, onEditTrade, onDeleteTr
                 ${trade.pnl.toFixed(2)}
               </TableCell>
               <TableCell>
+                {trade.riskReward ? trade.riskReward.toFixed(1) : '-'}
+              </TableCell>
+              <TableCell>
+                {trade.session || '-'}
+              </TableCell>
+              <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {trade.tags.map((tag, index) => (
+                  {trade.tags?.map((tag, index) => (
                     <Badge key={index} variant="outline">{tag}</Badge>
-                  ))}
+                  )) || '-'}
                 </div>
               </TableCell>
               <TableCell className="text-right">

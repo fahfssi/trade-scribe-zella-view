@@ -1,16 +1,18 @@
+
 import React, { useEffect, useState } from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import ProfitLossChart from '@/components/dashboard/ProfitLossChart';
 import PerformanceByStrategy from '@/components/dashboard/PerformanceByStrategy';
 import SessionsChart from '@/components/dashboard/SessionsChart';
 import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy, getTradesFromStorage } from '@/services/tradeService';
-import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock, Scale } from 'lucide-react';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(getTradeStatistics());
   const [pnlByDay, setPnlByDay] = useState(getPnlByDay());
   const [performanceByStrategy, setPerformanceByStrategy] = useState(getPerformanceByStrategy());
   const [sessionData, setSessionData] = useState<any[]>([]);
+  const [brokerReports, setBrokerReports] = useState<any[]>([]);
   
   const getSessionsData = () => {
     const trades = getTradesFromStorage();
@@ -50,6 +52,12 @@ const Dashboard = () => {
       setPnlByDay(getPnlByDay());
       setPerformanceByStrategy(getPerformanceByStrategy());
       setSessionData(getSessionsData());
+      
+      // Get broker reports from localStorage if any
+      const storedReports = localStorage.getItem('brokerReports');
+      if (storedReports) {
+        setBrokerReports(JSON.parse(storedReports));
+      }
     };
     
     updateDashboard();
@@ -86,10 +94,11 @@ const Dashboard = () => {
           trend={stats.profitFactor > 1 ? 'up' : 'down'}
         />
         <StatCard
-          title="Total Trades"
-          value={stats.totalTrades}
-          icon={<Clock size={20} />}
-          description="All time trades"
+          title="Avg Risk:Reward"
+          value={stats.averageRiskReward.toFixed(1)}
+          icon={<Scale size={20} />}
+          description={`From ${stats.totalTrades} trades`}
+          trend={stats.averageRiskReward > 1 ? 'up' : 'down'}
         />
       </div>
       

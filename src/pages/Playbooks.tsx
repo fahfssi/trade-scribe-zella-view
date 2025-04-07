@@ -2,151 +2,202 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Plus, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
-interface PlaybookImage {
+interface TradeNote {
   id: string;
-  imageUrl: string;
-  description: string;
+  title: string;
+  content: string;
   createdAt: string;
 }
 
 const PlaybooksPage = () => {
-  const [playbookImages, setPlaybookImages] = useState<PlaybookImage[]>([]);
-  const [description, setDescription] = useState('');
+  const [notes, setNotes] = useState<TradeNote[]>([]);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Load saved images from localStorage
+  // Load saved notes from localStorage
   useEffect(() => {
-    const savedImages = localStorage.getItem('playbookImages');
-    if (savedImages) {
-      setPlaybookImages(JSON.parse(savedImages));
+    const savedNotes = localStorage.getItem('tradeNotes');
+    if (savedNotes) {
+      setNotes(JSON.parse(savedNotes));
     }
   }, []);
   
-  // Save images to localStorage when updated
+  // Save notes to localStorage when updated
   useEffect(() => {
-    localStorage.setItem('playbookImages', JSON.stringify(playbookImages));
-  }, [playbookImages]);
+    localStorage.setItem('tradeNotes', JSON.stringify(notes));
+  }, [notes]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) return;
+  const handleCreateNote = () => {
+    if (!title.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please enter a title for your note",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    const file = event.target.files[0];
-    const reader = new FileReader();
+    if (editingNoteId) {
+      // Update existing note
+      const updatedNotes = notes.map(note => 
+        note.id === editingNoteId 
+          ? { ...note, title, content, createdAt: new Date().toISOString() } 
+          : note
+      );
+      setNotes(updatedNotes);
+      
+      toast({
+        title: "Note updated",
+        description: "Your trading note has been updated successfully"
+      });
+    } else {
+      // Create new note
+      const newNote: TradeNote = {
+        id: Date.now().toString(),
+        title,
+        content,
+        createdAt: new Date().toISOString()
+      };
+      
+      setNotes([newNote, ...notes]);
+      
+      toast({
+        title: "Note created",
+        description: "Your trading note has been saved successfully"
+      });
+    }
     
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const newImage: PlaybookImage = {
-          id: Date.now().toString(),
-          imageUrl: reader.result,
-          description: description,
-          createdAt: new Date().toISOString()
-        };
-        
-        setPlaybookImages(prev => [newImage, ...prev]);
-        setDescription('');
-        
-        toast({
-          title: "Image added",
-          description: "Your trade image has been added to the playbook"
-        });
-      }
-    };
-    
-    reader.readAsDataURL(file);
+    // Reset form
+    setTitle('');
+    setContent('');
+    setEditingNoteId(null);
   };
   
-  const deleteImage = (id: string) => {
-    setPlaybookImages(prev => prev.filter(img => img.id !== id));
+  const editNote = (note: TradeNote) => {
+    setTitle(note.title);
+    setContent(note.content);
+    setEditingNoteId(note.id);
+  };
+  
+  const deleteNote = (id: string) => {
+    setNotes(notes.filter(note => note.id !== id));
+    
+    if (editingNoteId === id) {
+      setTitle('');
+      setContent('');
+      setEditingNoteId(null);
+    }
+    
     toast({
-      title: "Image removed",
-      description: "The trade image has been removed from your playbook"
+      title: "Note deleted",
+      description: "The trading note has been removed"
     });
   };
   
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Strategy Playbooks</h1>
+      <h1 className="text-3xl font-bold">Trading Notes</h1>
       <p className="text-muted-foreground">
-        Create and manage your trading strategies and setups. Upload images of successful trades to build your playbook.
+        Keep track of your trading insights, patterns, and lessons learned.
       </p>
       
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Add Trade Example</CardTitle>
-          <CardDescription>Upload a screenshot of your trade with notes to build your playbook</CardDescription>
+          <CardTitle>{editingNoteId ? "Edit Note" : "Create New Note"}</CardTitle>
+          <CardDescription>Record your observations and insights about trading patterns</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Textarea
-            placeholder="Enter description or notes about this trade setup..."
-            className="resize-none min-h-[100px]"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <div className="flex items-center gap-4">
+          <div>
             <Input
-              type="file"
-              accept="image/*"
-              id="image-upload"
-              className="hidden"
-              onChange={handleImageUpload}
+              placeholder="Note title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mb-4"
             />
-            <label htmlFor="image-upload" className="w-full">
-              <Button variant="outline" className="w-full cursor-pointer" asChild>
-                <div>
-                  <Upload className="mr-2 h-4 w-4" /> Upload Trade Image
-                </div>
+            <Textarea
+              placeholder="Write your trading notes, observations, or strategies here..."
+              className="resize-none min-h-[200px]"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            {editingNoteId && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setTitle('');
+                  setContent('');
+                  setEditingNoteId(null);
+                }}
+              >
+                Cancel
               </Button>
-            </label>
+            )}
+            <Button onClick={handleCreateNote}>
+              <Save className="mr-2 h-4 w-4" />
+              {editingNoteId ? "Update Note" : "Save Note"}
+            </Button>
           </div>
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {playbookImages.length > 0 ? (
-          playbookImages.map(img => (
-            <Card key={img.id} className="overflow-hidden">
-              <div className="relative">
-                <img 
-                  src={img.imageUrl} 
-                  alt="Trade example" 
-                  className="w-full h-48 object-cover"
-                />
-                <Button 
-                  variant="destructive" 
-                  size="icon" 
-                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                  onClick={() => deleteImage(img.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <CardContent className="pt-4">
-                <p className="text-sm">{img.description}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {new Date(img.createdAt).toLocaleDateString()}
-                </p>
+      <div className="space-y-4">
+        {notes.length > 0 ? (
+          notes.map(note => (
+            <Card key={note.id} className="overflow-hidden">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>{note.title}</CardTitle>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => editNote(note)}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => deleteNote(note.id)}
+                      className="text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription>
+                  {new Date(note.createdAt).toLocaleDateString()} at {new Date(note.createdAt).toLocaleTimeString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap">{note.content}</p>
               </CardContent>
             </Card>
           ))
         ) : (
-          <Card className="col-span-full border-dashed border-2">
+          <Card className="border-dashed border-2">
             <CardHeader>
-              <CardTitle className="text-center">No Trade Examples Yet</CardTitle>
+              <CardTitle className="text-center">No Notes Yet</CardTitle>
             </CardHeader>
             <CardContent className="text-center py-8">
               <p className="text-muted-foreground mb-4">
-                Upload images of your trades with descriptions to build your playbook
+                Start documenting your trading insights and patterns
               </p>
-              <Button 
-                variant="outline" 
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Your First Example
+              <Button onClick={() => {
+                setTitle('');
+                setContent('');
+                setEditingNoteId(null);
+              }}>
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Note
               </Button>
             </CardContent>
           </Card>

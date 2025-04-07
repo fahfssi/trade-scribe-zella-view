@@ -16,4 +16,19 @@ export interface TradeEntry {
   notes?: string;
   tags?: string[];
   session?: TradingSession;
+  riskReward?: number; // Added risk-to-reward ratio
+}
+
+// New interface for imported CSV data
+export interface BrokerReport {
+  id: string;
+  name: string;
+  date: string;
+  totalPnl: number;
+  winRate: number;
+  tradeCount: number;
+  averageWin: number;
+  averageLoss: number;
+  largestWin: number;
+  largestLoss: number;
 }

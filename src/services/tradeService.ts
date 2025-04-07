@@ -1,4 +1,5 @@
-import { TradeEntry } from '@/types/trade';
+
+import { TradeEntry, BrokerReport } from '@/types/trade';
 
 // Sample data for the app
 const sampleTrades: TradeEntry[] = [
@@ -14,6 +15,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Strong market open, followed momentum after earnings announcement.',
     tags: ['momentum', 'earnings'],
     pnl: 53.00,
+    session: 'New York AM',
+    riskReward: 2.5,
   },
   {
     id: '2',
@@ -27,6 +30,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Technical overbought signal on hourly chart.',
     tags: ['technical', 'overbought'],
     pnl: 19.00,
+    session: 'New York AM',
+    riskReward: 1.8,
   },
   {
     id: '3',
@@ -40,6 +45,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Trade didn\'t work out, market reversed shortly after entry.',
     tags: ['gap fill', 'loss'],
     pnl: -13.35,
+    session: 'New York PM',
+    riskReward: 1.2,
   },
   {
     id: '4',
@@ -53,6 +60,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Took profit too early, stock continued higher afterward.',
     tags: ['support', 'partial profit'],
     pnl: 21.75,
+    session: 'New York PM',
+    riskReward: 3.0,
   },
   {
     id: '5',
@@ -66,6 +75,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Poor trade, market was in strong uptrend.',
     tags: ['countertrend', 'loss'],
     pnl: -35.60,
+    session: 'London',
+    riskReward: 0.5,
   },
   {
     id: '6',
@@ -79,6 +90,8 @@ const sampleTrades: TradeEntry[] = [
     notes: 'Clean break of resistance level, held for afternoon run.',
     tags: ['momentum', 'breakout'],
     pnl: 26.50,
+    session: 'London Close',
+    riskReward: 2.1,
   },
 ];
 
@@ -125,6 +138,129 @@ export const deleteTrade = (id: string): void => {
   saveTradesToStorage(updatedTrades);
 };
 
+// CSV import functionality
+export const importCSV = (csvText: string): { 
+  success: boolean; 
+  trades?: TradeEntry[]; 
+  report?: BrokerReport;
+  error?: string 
+} => {
+  try {
+    // Basic CSV parsing (in a real app, you'd want a more robust CSV parser)
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim());
+    
+    // Validate CSV structure
+    const requiredHeaders = ['symbol', 'date', 'direction', 'entry_price', 'exit_price', 'strategy', 'pnl'];
+    const missingHeaders = requiredHeaders.filter(h => !headers.some(header => header.toLowerCase().includes(h)));
+    
+    if (missingHeaders.length > 0) {
+      return {
+        success: false,
+        error: `CSV missing required headers: ${missingHeaders.join(', ')}`
+      };
+    }
+    
+    const trades = getTradesFromStorage();
+    const newTrades: TradeEntry[] = [];
+    let totalPnl = 0;
+    let winCount = 0;
+    let lossCount = 0;
+    let totalWin = 0;
+    let totalLoss = 0;
+    let largestWin = 0;
+    let largestLoss = 0;
+    
+    // Parse each line after the header
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = line.split(',').map(v => v.trim());
+      if (values.length !== headers.length) continue;
+      
+      // Create a map of header->value
+      const rowData: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        rowData[header.toLowerCase()] = values[index];
+      });
+      
+      // Extract data
+      const symbol = rowData.symbol || '';
+      const date = new Date(rowData.date).toISOString();
+      const direction = (rowData.direction?.toLowerCase().includes('buy') || 
+                         rowData.direction?.toLowerCase().includes('long')) ? 'long' : 'short';
+      const entryPrice = parseFloat(rowData.entry_price || rowData.entryprice || '0');
+      const exitPrice = parseFloat(rowData.exit_price || rowData.exitprice || '0');
+      const pnl = parseFloat(rowData.pnl || '0');
+      const strategy = rowData.strategy || 'Unknown';
+      const session = rowData.session || 'New York AM';
+      const riskReward = parseFloat(rowData.risk_reward || rowData.riskreward || '0') || undefined;
+      const tags = rowData.tags?.split(';').map(tag => tag.trim()) || [];
+      
+      // Create trade object
+      const newTrade: TradeEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        symbol,
+        date,
+        direction,
+        entryPrice,
+        exitPrice,
+        quantity: 1, // Default
+        strategy,
+        pnl,
+        tags,
+        session: session as any,
+        riskReward,
+        notes: rowData.notes || '',
+      };
+      
+      newTrades.push(newTrade);
+      
+      // Calculate statistics
+      totalPnl += pnl;
+      if (pnl > 0) {
+        winCount++;
+        totalWin += pnl;
+        largestWin = Math.max(largestWin, pnl);
+      } else if (pnl < 0) {
+        lossCount++;
+        totalLoss += Math.abs(pnl);
+        largestLoss = Math.max(largestLoss, Math.abs(pnl));
+      }
+    }
+    
+    // Create broker report
+    const report: BrokerReport = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: `Imported Report ${new Date().toLocaleDateString()}`,
+      date: new Date().toISOString(),
+      totalPnl,
+      winRate: winCount / (winCount + lossCount) * 100 || 0,
+      tradeCount: newTrades.length,
+      averageWin: winCount > 0 ? totalWin / winCount : 0,
+      averageLoss: lossCount > 0 ? totalLoss / lossCount : 0,
+      largestWin,
+      largestLoss
+    };
+    
+    // Save all trades
+    saveTradesToStorage([...newTrades, ...trades]);
+    
+    return {
+      success: true,
+      trades: [...newTrades, ...trades],
+      report
+    };
+  } catch (error) {
+    console.error('CSV import error:', error);
+    return {
+      success: false,
+      error: 'Failed to parse CSV file. Please check the format and try again.'
+    };
+  }
+};
+
 // Analytics functions
 export const getTradeStatistics = () => {
   const trades = getTradesFromStorage();
@@ -141,6 +277,7 @@ export const getTradeStatistics = () => {
       averagePnl: 0,
       averageWin: 0,
       averageLoss: 0,
+      averageRiskReward: 0,
     };
   }
   
@@ -150,6 +287,12 @@ export const getTradeStatistics = () => {
   const totalPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
   const totalProfit = winningTrades.reduce((sum, trade) => sum + trade.pnl, 0);
   const totalLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.pnl, 0));
+  
+  // Calculate average risk-reward ratio
+  const tradesWithRR = trades.filter(trade => trade.riskReward !== undefined && trade.riskReward > 0);
+  const averageRiskReward = tradesWithRR.length > 0 
+    ? tradesWithRR.reduce((sum, trade) => sum + (trade.riskReward || 0), 0) / tradesWithRR.length
+    : 0;
   
   return {
     totalTrades: trades.length,
@@ -161,6 +304,7 @@ export const getTradeStatistics = () => {
     averagePnl: totalPnl / trades.length,
     averageWin: winningTrades.length > 0 ? totalProfit / winningTrades.length : 0,
     averageLoss: losingTrades.length > 0 ? totalLoss / losingTrades.length : 0,
+    averageRiskReward: averageRiskReward,
   };
 };
 
