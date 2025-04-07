@@ -1,4 +1,4 @@
-import { TradeEntry, BrokerReport } from '@/types/trade';
+import { TradeEntry, BrokerReport, TradeDirection, TradingSession } from '@/types/trade';
 
 // Sample data for the app
 const sampleTrades: TradeEntry[] = [
