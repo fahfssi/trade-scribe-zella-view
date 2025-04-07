@@ -26,6 +26,10 @@ export interface TradeEntry {
   soldTimestamp?: string;
   duration?: string;
   size?: number;
+  // Track the source of the trade
+  source?: 'manual' | 'import';
+  // If imported, store the broker report ID it belongs to
+  brokerReportId?: string;
 }
 
 // New interface for imported CSV data
@@ -41,4 +45,12 @@ export interface BrokerReport {
   largestWin: number;
   largestLoss: number;
   riskRewardRatio?: number;
+}
+
+// Interface for broker statistics shown on dashboard
+export interface BrokerStatistics extends BrokerReport {
+  winningTrades: number;
+  losingTrades: number;
+  profitFactor: number;
+  averagePnl: number;
 }

@@ -477,3 +477,41 @@ export const getSessionStatistics = () => {
   
   return sessionStats;
 };
+
+export const getBrokerReportStatistics = (reportId: string) => {
+  const storedReports = localStorage.getItem('brokerReports');
+  if (!storedReports) return null;
+
+  const reports = JSON.parse(storedReports) as BrokerReport[];
+  const report = reports.find(r => r.id === reportId);
+  if (!report) return null;
+
+  // Get trades associated with this report
+  const storedTrades = localStorage.getItem('brokerImportedTrades');
+  if (!storedTrades) return report;
+
+  const allImportedTrades = JSON.parse(storedTrades) as Record<string, TradeEntry[]>;
+  const reportTrades = allImportedTrades[reportId] || [];
+  
+  if (reportTrades.length === 0) return report;
+
+  // Calculate additional statistics if we have imported trades
+  const winningTrades = reportTrades.filter(t => t.pnl > 0).length;
+  const losingTrades = reportTrades.filter(t => t.pnl < 0).length;
+  
+  // Calculate profit factor
+  const grossProfit = reportTrades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+  const grossLoss = Math.abs(reportTrades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0)) || 1;
+  const profitFactor = grossLoss ? grossProfit / grossLoss : grossProfit;
+
+  // Calculate average PnL
+  const averagePnl = reportTrades.reduce((sum, t) => sum + t.pnl, 0) / reportTrades.length;
+
+  return {
+    ...report,
+    winningTrades,
+    losingTrades,
+    profitFactor,
+    averagePnl
+  };
+};
