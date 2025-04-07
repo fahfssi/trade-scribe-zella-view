@@ -487,15 +487,21 @@ export const getBrokerReportStatistics = (reportId: string) => {
   if (!report) return null;
 
   // Get trades associated with this report
-  const storedTrades = localStorage.getItem('brokerImportedTrades');
-  if (!storedTrades) return report;
-
-  const allImportedTrades = JSON.parse(storedTrades) as Record<string, TradeEntry[]>;
-  const reportTrades = allImportedTrades[reportId] || [];
+  const allTrades = getTradesFromStorage();
+  const reportTrades = allTrades.filter(trade => trade.brokerReportId === reportId);
   
-  if (reportTrades.length === 0) return report;
+  // If no trades found specifically for this report, return the basic report data
+  if (reportTrades.length === 0) {
+    return {
+      ...report,
+      winningTrades: 0,
+      losingTrades: 0,
+      profitFactor: 0,
+      averagePnl: 0
+    };
+  }
 
-  // Calculate additional statistics if we have imported trades
+  // Calculate additional statistics
   const winningTrades = reportTrades.filter(t => t.pnl > 0).length;
   const losingTrades = reportTrades.filter(t => t.pnl < 0).length;
   
@@ -505,7 +511,8 @@ export const getBrokerReportStatistics = (reportId: string) => {
   const profitFactor = grossLoss ? grossProfit / grossLoss : grossProfit;
 
   // Calculate average PnL
-  const averagePnl = reportTrades.reduce((sum, t) => sum + t.pnl, 0) / reportTrades.length;
+  const averagePnl = reportTrades.length > 0 ? 
+    reportTrades.reduce((sum, t) => sum + t.pnl, 0) / reportTrades.length : 0;
 
   return {
     ...report,
