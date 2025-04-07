@@ -60,9 +60,18 @@ const SessionsChart: React.FC<SessionChartProps> = ({
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <ChartTooltip>
-                <ChartTooltipContent />
-              </ChartTooltip>
+              <Tooltip content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-background border border-border p-2 rounded-md shadow-md">
+                      <p className="font-medium">{data.name}</p>
+                      <p className="text-sm">{`${data.percent}% (${data.value} trades)`}</p>
+                    </div>
+                  );
+                }
+                return null;
+              }} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
