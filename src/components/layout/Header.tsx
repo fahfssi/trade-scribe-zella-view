@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChartLine, Calendar, BookOpen, PieChart, Menu, X } from 'lucide-react';
+import { ChartLine, Calendar, BookOpen, PieChart, Menu, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,6 +30,7 @@ const Header = () => {
             <Link to="/journal" className="text-gray-700 hover:text-tradezella-primary font-medium">Journal</Link>
             <Link to="/calendar" className="text-gray-700 hover:text-tradezella-primary font-medium">Calendar</Link>
             <Link to="/playbooks" className="text-gray-700 hover:text-tradezella-primary font-medium">Playbooks</Link>
+            <Link to="/notes" className="text-gray-700 hover:text-tradezella-primary font-medium">Notes</Link>
           </nav>
         ) : (
           <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
@@ -62,6 +64,10 @@ const Header = () => {
             <Link to="/playbooks" className="flex items-center text-gray-700 hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
               <ChartLine size={20} className="mr-2" />
               Playbooks
+            </Link>
+            <Link to="/notes" className="flex items-center text-gray-700 hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
+              <FileText size={20} className="mr-2" />
+              Notes
             </Link>
           </nav>
         </div>

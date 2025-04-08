@@ -11,7 +11,7 @@ const CalendarPage = () => {
 
   useEffect(() => {
     try {
-      const loadedTrades = getTradesFromStorage();
+      const loadedTrades = getTradesFromStorage() || [];
       setTrades(loadedTrades);
     } catch (err) {
       console.error('Error loading trades for calendar:', err);

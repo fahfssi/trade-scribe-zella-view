@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Save, Trash2, Image } from 'lucide-react';
+import { Plus, Save, Trash2, Image, FileText } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -129,10 +130,19 @@ const PlaybooksPage = () => {
   
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Trading Notes</h1>
-      <p className="text-muted-foreground">
-        Keep track of your trading insights, patterns, and lessons learned.
-      </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Trading Playbooks</h1>
+          <p className="text-muted-foreground">
+            Create trading notes and strategies that will be saved to your notes archive.
+          </p>
+        </div>
+        <Link to="/notes">
+          <Button variant="outline" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" /> View Notes Archive
+          </Button>
+        </Link>
+      </div>
       
       <Card className="mb-6">
         <CardHeader>
