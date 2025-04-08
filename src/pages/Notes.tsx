@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, Save, Image } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Image, Maximize } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface TradeNote {
   id: string;
@@ -15,6 +17,8 @@ interface TradeNote {
 
 const NotesPage = () => {
   const [notes, setNotes] = useState<TradeNote[]>([]);
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Load saved notes from localStorage
@@ -36,6 +40,19 @@ const NotesPage = () => {
       title: "Note deleted",
       description: "The trading note has been removed"
     });
+
+    // Close the note if it was open
+    if (openNoteId === id) {
+      setOpenNoteId(null);
+    }
+  };
+
+  const toggleNote = (id: string) => {
+    setOpenNoteId(openNoteId === id ? null : id);
+  };
+
+  const openImagePreview = (imageUrl: string) => {
+    setImagePreview(imageUrl);
   };
 
   return (
@@ -67,36 +84,66 @@ const NotesPage = () => {
       <div className="space-y-4">
         {notes.length > 0 ? (
           notes.map(note => (
-            <Card key={note.id} className="overflow-hidden">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>{note.title}</CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => deleteNote(note.id)}
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <CardDescription>
-                  {new Date(note.createdAt).toLocaleDateString()} at {new Date(note.createdAt).toLocaleTimeString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {note.imageUrl && (
-                  <div className="mb-4">
-                    <img 
-                      src={note.imageUrl} 
-                      alt={`Visual for ${note.title}`} 
-                      className="max-h-[300px] rounded-md border border-gray-200" 
-                    />
+            <Collapsible
+              key={note.id}
+              open={openNoteId === note.id}
+              onOpenChange={() => toggleNote(note.id)}
+              className="rounded-md border shadow-sm"
+            >
+              <div className="flex items-center justify-between p-4 bg-card hover:bg-accent/20 transition-colors cursor-pointer">
+                <CollapsibleTrigger className="flex-1 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">{note.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(note.createdAt).toLocaleDateString()} at {new Date(note.createdAt).toLocaleTimeString()}
+                    </p>
                   </div>
-                )}
-                <p className="whitespace-pre-wrap">{note.content}</p>
-              </CardContent>
-            </Card>
+                  {openNoteId === note.id ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </CollapsibleTrigger>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note.id);
+                  }}
+                  className="ml-2 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <CollapsibleContent>
+                <div className="p-4 pt-0 border-t">
+                  {note.imageUrl && (
+                    <div className="mb-4">
+                      <div className="relative group">
+                        <img 
+                          src={note.imageUrl} 
+                          alt={`Visual for ${note.title}`} 
+                          className="max-h-[300px] rounded-md border border-gray-200 cursor-zoom-in" 
+                          onClick={() => openImagePreview(note.imageUrl as string)}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => openImagePreview(note.imageUrl as string)}
+                        >
+                          <Maximize className="h-4 w-4 mr-1" />
+                          Expand
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap">{note.content}</p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           ))
         ) : (
           <Card className="border-dashed border-2">
@@ -111,6 +158,21 @@ const NotesPage = () => {
           </Card>
         )}
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <div className="p-1">
+            {imagePreview && (
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="w-full h-auto object-contain max-h-[80vh]"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
