@@ -8,7 +8,6 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import Layout from "@/components/layout/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Journal from "@/pages/Journal";
-import Calendar from "@/pages/Calendar";
 import Playbooks from "@/pages/Playbooks";
 import Notes from "@/pages/Notes";
 import NotFound from "@/pages/NotFound";
@@ -25,7 +24,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Layout><Dashboard /></Layout>} />
             <Route path="/journal" element={<Layout><Journal /></Layout>} />
-            <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
             <Route path="/playbooks" element={<Layout><Playbooks /></Layout>} />
             <Route path="/notes" element={<Layout><Notes /></Layout>} />
             <Route path="*" element={<NotFound />} />
