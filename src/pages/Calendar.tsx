@@ -1,11 +1,23 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TradeCalendar from '@/components/calendar/TradeCalendar';
 import { getTradesFromStorage } from '@/services/tradeService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TradeEntry } from '@/types/trade';
 
 const CalendarPage = () => {
-  const trades = getTradesFromStorage();
+  const [trades, setTrades] = useState<TradeEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const loadedTrades = getTradesFromStorage();
+      setTrades(loadedTrades);
+    } catch (err) {
+      console.error('Error loading trades for calendar:', err);
+      setError('Could not load trades data. Please try refreshing the page.');
+    }
+  }, []);
 
   const handleDateClick = (date: Date) => {
     console.log('Date clicked:', date);
@@ -22,9 +34,15 @@ const CalendarPage = () => {
           </p>
         </CardHeader>
         <CardContent className="p-2">
-          <div className="calendar-container" style={{ height: "calc(100vh - 10rem)" }}>
-            <TradeCalendar trades={trades} onDateClick={handleDateClick} />
-          </div>
+          {error ? (
+            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md">
+              {error}
+            </div>
+          ) : (
+            <div className="calendar-container" style={{ height: "calc(100vh - 10rem)" }}>
+              <TradeCalendar trades={trades} onDateClick={handleDateClick} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

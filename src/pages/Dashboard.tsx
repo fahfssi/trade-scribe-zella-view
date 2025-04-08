@@ -1,13 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import ProfitLossChart from '@/components/dashboard/ProfitLossChart';
 import PerformanceByStrategy from '@/components/dashboard/PerformanceByStrategy';
 import SessionsChart from '@/components/dashboard/SessionsChart';
-import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy, getTradesFromStorage, getBrokerReportStatistics } from '@/services/tradeService';
-import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock, Scale } from 'lucide-react';
+import { getTradeStatistics, getPnlByDay, getPerformanceByStrategy, getTradesFromStorage, getBrokerReportStatistics, deleteBrokerReport } from '@/services/tradeService';
+import { ArrowUp, ArrowDown, Percent, DollarSign, TrendingUp, Clock, Scale, Trash2 } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(getTradeStatistics());
@@ -18,6 +20,7 @@ const Dashboard = () => {
   const [showBrokerData, setShowBrokerData] = useState(false);
   const [selectedBrokerReport, setSelectedBrokerReport] = useState<string | null>(null);
   const [brokerStats, setBrokerStats] = useState<any>(null);
+  const { toast } = useToast();
   
   const getSessionsData = () => {
     const trades = getTradesFromStorage();
@@ -74,6 +77,10 @@ const Dashboard = () => {
         // Set the first report as default if none selected
         if (reports.length > 0 && !selectedBrokerReport) {
           setSelectedBrokerReport(reports[0].id);
+        } else if (reports.length === 0) {
+          setSelectedBrokerReport(null);
+        } else if (selectedBrokerReport && !reports.find(r => r.id === selectedBrokerReport)) {
+          setSelectedBrokerReport(reports[0].id);
         }
       }
     };
@@ -93,7 +100,28 @@ const Dashboard = () => {
     setSelectedBrokerReport(e.target.value);
   };
 
-  // Helper function to safely format numbers with toFixed
+  const handleDeleteReport = (reportId: string) => {
+    deleteBrokerReport(reportId);
+    
+    // Update the broker reports list
+    const updatedReports = brokerReports.filter(report => report.id !== reportId);
+    setBrokerReports(updatedReports);
+    
+    // Update selected report if needed
+    if (selectedBrokerReport === reportId) {
+      if (updatedReports.length > 0) {
+        setSelectedBrokerReport(updatedReports[0].id);
+      } else {
+        setSelectedBrokerReport(null);
+      }
+    }
+    
+    toast({
+      title: "Report deleted",
+      description: "The broker report has been deleted successfully"
+    });
+  };
+
   const safeToFixed = (value: number | undefined | null, digits: number = 2): string => {
     if (value === undefined || value === null) {
       return '0.00';
@@ -119,23 +147,47 @@ const Dashboard = () => {
           </div>
           
           {showBrokerData && brokerReports.length > 0 && (
-            <select 
-              value={selectedBrokerReport || ''} 
-              onChange={handleBrokerReportChange}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-            >
-              {brokerReports.map(report => (
-                <option key={report.id} value={report.id}>
-                  {report.name} - {report.date}
-                </option>
-              ))}
-            </select>
+            <div className="flex space-x-2 items-center">
+              <select 
+                value={selectedBrokerReport || ''} 
+                onChange={handleBrokerReportChange}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                {brokerReports.map(report => (
+                  <option key={report.id} value={report.id}>
+                    {report.name} - {new Date(report.date).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Broker Report</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this broker report? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => selectedBrokerReport && handleDeleteReport(selectedBrokerReport)}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
         </div>
       </div>
       
       {!showBrokerData ? (
-        // Manual trades dashboard content
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
@@ -222,7 +274,6 @@ const Dashboard = () => {
           </div>
         </>
       ) : (
-        // Broker reports dashboard content
         selectedBrokerReport && brokerStats ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

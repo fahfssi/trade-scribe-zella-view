@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Image } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -12,13 +12,16 @@ interface TradeNote {
   title: string;
   content: string;
   createdAt: string;
+  imageUrl?: string;
 }
 
 const PlaybooksPage = () => {
   const [notes, setNotes] = useState<TradeNote[]>([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   // Load saved notes from localStorage
@@ -48,7 +51,7 @@ const PlaybooksPage = () => {
       // Update existing note
       const updatedNotes = notes.map(note => 
         note.id === editingNoteId 
-          ? { ...note, title, content, createdAt: new Date().toISOString() } 
+          ? { ...note, title, content, imageUrl, createdAt: new Date().toISOString() } 
           : note
       );
       setNotes(updatedNotes);
@@ -63,6 +66,7 @@ const PlaybooksPage = () => {
         id: Date.now().toString(),
         title,
         content,
+        imageUrl,
         createdAt: new Date().toISOString()
       };
       
@@ -77,12 +81,14 @@ const PlaybooksPage = () => {
     // Reset form
     setTitle('');
     setContent('');
+    setImageUrl('');
     setEditingNoteId(null);
   };
   
   const editNote = (note: TradeNote) => {
     setTitle(note.title);
     setContent(note.content);
+    setImageUrl(note.imageUrl || '');
     setEditingNoteId(note.id);
   };
   
@@ -92,6 +98,7 @@ const PlaybooksPage = () => {
     if (editingNoteId === id) {
       setTitle('');
       setContent('');
+      setImageUrl('');
       setEditingNoteId(null);
     }
     
@@ -99,6 +106,25 @@ const PlaybooksPage = () => {
       title: "Note deleted",
       description: "The trading note has been removed"
     });
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Images must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create file URL for display
+    const imageUrl = URL.createObjectURL(file);
+    setImageUrl(imageUrl);
   };
   
   return (
@@ -123,10 +149,49 @@ const PlaybooksPage = () => {
             />
             <Textarea
               placeholder="Write your trading notes, observations, or strategies here..."
-              className="resize-none min-h-[200px]"
+              className="resize-none min-h-[200px] mb-4"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <Image className="h-4 w-4" /> Add Image
+                </Button>
+                {imageUrl && (
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setImageUrl('')}
+                  >
+                    Remove Image
+                  </Button>
+                )}
+              </div>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              {imageUrl && (
+                <div className="relative mt-2">
+                  <img 
+                    src={imageUrl} 
+                    alt="Note visual" 
+                    className="max-h-[200px] rounded-md border border-gray-200" 
+                  />
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             {editingNoteId && (
@@ -135,6 +200,7 @@ const PlaybooksPage = () => {
                 onClick={() => {
                   setTitle('');
                   setContent('');
+                  setImageUrl('');
                   setEditingNoteId(null);
                 }}
               >
@@ -179,6 +245,15 @@ const PlaybooksPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {note.imageUrl && (
+                  <div className="mb-4">
+                    <img 
+                      src={note.imageUrl} 
+                      alt={`Visual for ${note.title}`} 
+                      className="max-h-[300px] rounded-md border border-gray-200" 
+                    />
+                  </div>
+                )}
                 <p className="whitespace-pre-wrap">{note.content}</p>
               </CardContent>
             </Card>
@@ -195,6 +270,7 @@ const PlaybooksPage = () => {
               <Button onClick={() => {
                 setTitle('');
                 setContent('');
+                setImageUrl('');
                 setEditingNoteId(null);
               }}>
                 <Plus className="mr-2 h-4 w-4" /> Create Your First Note

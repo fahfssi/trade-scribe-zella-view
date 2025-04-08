@@ -522,3 +522,19 @@ export const getBrokerReportStatistics = (reportId: string) => {
     averagePnl
   };
 };
+
+// New function to delete broker reports
+export const deleteBrokerReport = (reportId: string): void => {
+  // Delete the report from localStorage
+  const storedReports = localStorage.getItem('brokerReports');
+  if (storedReports) {
+    const reports = JSON.parse(storedReports) as BrokerReport[];
+    const updatedReports = reports.filter(report => report.id !== reportId);
+    localStorage.setItem('brokerReports', JSON.stringify(updatedReports));
+    
+    // Also remove any trades associated with this report
+    const trades = getTradesFromStorage();
+    const updatedTrades = trades.filter(trade => trade.brokerReportId !== reportId);
+    saveTradesToStorage(updatedTrades);
+  }
+};
