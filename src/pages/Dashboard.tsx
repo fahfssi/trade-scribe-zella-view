@@ -148,6 +148,12 @@ const Dashboard = () => {
                 Calendar
               </TabsTrigger>
             </TabsList>
+          
+            <div className="sr-only">
+              {/* These are here just to ensure the Tabs component properly initializes */}
+              <TabsContent value="overview" />
+              <TabsContent value="calendar" />
+            </div>
           </Tabs>
           
           <div className="flex items-center space-x-2">
@@ -202,27 +208,29 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <TabsContent value="overview" className="mt-0 space-y-6">
-        {!showBrokerData ? (
-          <>
-            <DashboardStats stats={stats} />
-            <ChartsSection pnlByDay={pnlByDay} performanceByStrategy={performanceByStrategy} />
-            <InsightsSection sessionData={sessionData} stats={stats} />
-          </>
-        ) : (
-          selectedBrokerReport && brokerStats ? (
-            <BrokerReportStats brokerStats={brokerStats} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
+        <TabsContent value="overview" className="mt-0 space-y-6">
+          {!showBrokerData ? (
+            <>
+              <DashboardStats stats={stats} />
+              <ChartsSection pnlByDay={pnlByDay} performanceByStrategy={performanceByStrategy} />
+              <InsightsSection sessionData={sessionData} stats={stats} />
+            </>
           ) : (
-            <div className="p-8 text-center">
-              <p className="text-muted-foreground">No broker report selected or available. Please import a broker report in the Journal page.</p>
-            </div>
-          )
-        )}
-      </TabsContent>
-      
-      <TabsContent value="calendar" className="mt-0">
-        <CalendarView trades={trades} />
-      </TabsContent>
+            selectedBrokerReport && brokerStats ? (
+              <BrokerReportStats brokerStats={brokerStats} />
+            ) : (
+              <div className="p-8 text-center">
+                <p className="text-muted-foreground">No broker report selected or available. Please import a broker report in the Journal page.</p>
+              </div>
+            )
+          )}
+        </TabsContent>
+        
+        <TabsContent value="calendar" className="mt-0">
+          <CalendarView trades={trades} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
