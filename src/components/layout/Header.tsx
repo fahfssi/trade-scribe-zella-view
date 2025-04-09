@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChartLine, Calendar, BookOpen, PieChart, Menu, X, FileText } from 'lucide-react';
+import { ChartLine, BookOpen, PieChart, Menu, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,7 +29,6 @@ const Header = () => {
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-foreground hover:text-tradezella-primary font-medium">Dashboard</Link>
             <Link to="/journal" className="text-foreground hover:text-tradezella-primary font-medium">Journal</Link>
-            <Link to="/calendar" className="text-foreground hover:text-tradezella-primary font-medium">Calendar</Link>
             <Link to="/playbooks" className="text-foreground hover:text-tradezella-primary font-medium">Playbooks</Link>
             <Link to="/notes" className="text-foreground hover:text-tradezella-primary font-medium">Notes</Link>
           </nav>
@@ -58,10 +57,6 @@ const Header = () => {
             <Link to="/journal" className="flex items-center text-foreground hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
               <BookOpen size={20} className="mr-2" />
               Journal
-            </Link>
-            <Link to="/calendar" className="flex items-center text-foreground hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
-              <Calendar size={20} className="mr-2" />
-              Calendar
             </Link>
             <Link to="/playbooks" className="flex items-center text-foreground hover:text-tradezella-primary font-medium p-2" onClick={toggleMobileMenu}>
               <ChartLine size={20} className="mr-2" />
