@@ -95,10 +95,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ trades }) => {
       <CardContent className="p-6">
         <div className="calendar-container">
           <Calendar
-            mode={viewMode}
+            mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            className="rounded-md border"
+            className="rounded-md border pointer-events-auto"
             modifiers={{
               hasTrades: (date) => {
                 const dateStr = format(date, 'yyyy-MM-dd');
