@@ -17,6 +17,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ trades }) => {
     console.log('Date clicked:', date);
   };
 
+  // Function to handle view mode toggle
+  const handleViewModeChange = (value: string | undefined) => {
+    if (value) {
+      setViewMode(value as 'month' | 'week' | 'day');
+      console.log('View mode changed to:', value);
+    }
+  };
+
   return (
     <Card className="w-[60%] mx-auto border-none shadow-none bg-transparent">
       <CardHeader className="pb-0">
@@ -28,7 +36,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ trades }) => {
             </p>
           </div>
           
-          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'month' | 'week' | 'day')}>
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={handleViewModeChange} 
+            className="border rounded-md"
+          >
             <ToggleGroupItem value="month" aria-label="Monthly view">
               <CalendarIcon className="h-4 w-4 mr-2" />
               Month

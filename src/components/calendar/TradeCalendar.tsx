@@ -376,7 +376,10 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, onDateClick, view
     );
   };
 
+  // Render the appropriate calendar view based on the viewMode prop
   const renderCalendarView = () => {
+    console.log('Current view mode:', viewMode);
+    
     switch (viewMode) {
       case 'day':
         return renderDailyView();
