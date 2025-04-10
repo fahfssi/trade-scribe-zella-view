@@ -2,13 +2,11 @@
 import React, { useState } from 'react';
 import { TradeEntry } from '@/types/trade';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CalendarDays, Calendar as CalendarIcon, Grid2X2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 interface CalendarViewProps {
   trades: TradeEntry[];
@@ -63,11 +61,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ trades }) => {
     );
   };
 
-  // Return to current month
-  const goToCurrentMonth = () => {
-    setCurrentMonth(new Date());
-  };
-
   // Generate calendar data
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -97,18 +90,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ trades }) => {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <CardTitle className="text-2xl font-bold">Trade Calendar</CardTitle>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" onClick={goToCurrentMonth}>
-              Today
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-              Next
-            </Button>
-          </div>
         </div>
         
         <div className="flex justify-between items-center mt-4">

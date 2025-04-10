@@ -241,7 +241,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => date && field.onChange(date)}
                           disabled={(date) => date > new Date()}
                           initialFocus
                           className="p-3 pointer-events-auto"
@@ -331,8 +331,8 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                     <FormLabel>Profit & Loss</FormLabel>
                     <FormControl>
                       <Input 
-                        type="text" 
-                        inputMode="decimal" 
+                        type="number" 
+                        step="0.01" 
                         placeholder="-100.00 or 100.00" 
                         value={field.value === 0 ? '' : field.value}
                         onChange={(e) => {
